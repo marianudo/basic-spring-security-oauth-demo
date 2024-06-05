@@ -22,7 +22,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -72,5 +74,14 @@ public class CashCardSpringSecurityTests {
                                 .header("Authorization", "Bearer " + token)
                 )
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldNotAllowTokensWithAnInvalidAudience() throws Exception {
+        String token = mint((claims) -> claims.audience(List.of("https://wrong")));
+
+        this.mvc.perform(get("/me").header("Authorization", "Bearer " + token))
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().string("WWW-Authenticate", containsString("aud claim is not valid")));
     }
 }
